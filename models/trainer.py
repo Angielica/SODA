@@ -103,7 +103,7 @@ class Trainer:
             outputs = outputs.view(outputs.size(0), 1, 28, 28).cpu().data
             save_image(outputs, f"outputs/images/reconstruction{epoch}.png")
 
-            n = min(img.size(0), 20)
+            n = min(img.size(0), 8)
             comparison = torch.cat([img.view(img.shape[0], 1, 28, 28)[:n],
                                     outputs.view(outputs.shape[0], 1, 28, 28)[:n]])
             save_image(comparison, f"outputs/images/comparison{epoch}.png")

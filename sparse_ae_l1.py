@@ -32,7 +32,7 @@ if __name__ == '__main__':
     num_dec_layer = 3
     learning_rate = 0.001
     batch_size = 100
-    is_disc = False
+    is_disc = True
 
     # image transformations
     transform = transforms.Compose([transforms.ToTensor()])
