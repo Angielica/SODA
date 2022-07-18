@@ -11,7 +11,8 @@ import numpy as np
 
 
 class Trainer:
-    def __init__(self, model, criterion, learning_rate, device, add_sparsity, reg_param):
+    def __init__(self, model, criterion, learning_rate, device, add_sparsity, reg_param, num_enc_layer, num_dec_layer,
+                 is_disc):
 
         self.model = model
         self.criterion = criterion
@@ -19,6 +20,9 @@ class Trainer:
         self.device = device
         self.add_sparsity = add_sparsity
         self.reg_param = reg_param
+        self.num_enc_layer = num_enc_layer
+        self.num_dec_layer = num_dec_layer
+        self.is_disc = is_disc
         self.temperature = 1.
         self.ANNEAL_RATE = 0.9995
         self.temp_min = 0.5
@@ -48,7 +52,8 @@ class Trainer:
             mse_loss = self.criterion(outputs, img)
 
             if self.add_sparsity == 'yes':
-                l1_loss = sparse_loss(self.model, img)
+                l1_loss = sparse_loss(self.model, img, self.num_enc_layer, self.num_dec_layer, self.is_disc, 
+                                      self.temperature)
                 # add the sparsity penalty
                 loss = mse_loss + self.reg_param * l1_loss
             else:
@@ -98,7 +103,7 @@ class Trainer:
             outputs = outputs.view(outputs.size(0), 1, 28, 28).cpu().data
             save_image(outputs, f"outputs/images/reconstruction{epoch}.png")
 
-            n = min(img.size(0), 8)
+            n = min(img.size(0), 20)
             comparison = torch.cat([img.view(img.shape[0], 1, 28, 28)[:n],
                                     outputs.view(outputs.shape[0], 1, 28, 28)[:n]])
             save_image(comparison, f"outputs/images/comparison{epoch}.png")

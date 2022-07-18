@@ -25,12 +25,14 @@ matplotlib.style.use('ggplot')
 
 
 if __name__ == '__main__':
-    epochs = 1
+    epochs = 50
     reg_param = 0.001
     add_sparsity = 'yes'
+    num_enc_layer = 3
+    num_dec_layer = 3
     learning_rate = 0.001
     batch_size = 100
-    is_disc = True
+    is_disc = False
 
     # image transformations
     transform = transforms.Compose([transforms.ToTensor()])
@@ -63,16 +65,17 @@ if __name__ == '__main__':
     device = get_device()
     make_dir()
 
-    model = SparseAutoEncoder(x_dim=784, h_dim=[500, 500], z_dim=int(784 * 1.5), is_disc=is_disc).to(device)
+    model = SparseAutoEncoder(x_dim=784, h_dim=500, z_dim=int(784 * 1.5), is_disc=is_disc).to(device)
 
     # the loss function
     criterion = nn.MSELoss()
-    path_model = f"outputs/sparse_ae{epochs}.pth"
+    path_model = f"outputs/checkpoint/sparse_ae{epochs}.pth"
 
-    trainer = Trainer(model, criterion, learning_rate, device, add_sparsity, reg_param)
+    trainer = Trainer(model, criterion, learning_rate, device, add_sparsity, reg_param, num_enc_layer, num_dec_layer,
+                      is_disc)
     trainer.train(train_loader, test_loader, epochs, path_model)
 
-    ## Load model
+    # Load model
     model.load_state_dict(torch.load(path_model))
 
     encoding = None

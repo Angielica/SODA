@@ -10,16 +10,16 @@ class Encoder(nn.Module):
         self.h_dim = h_dim
         self.z_dim = z_dim
 
-        self.neurons = [self.x_dim, *self.h_dim]
-        self.hidden_layers = nn.ModuleList([nn.Linear(self.neurons[i - 1], self.neurons[i])
-                                            for i in range(1, len(self.neurons))])
-        self.output = nn.Linear(self.h_dim[-1], self.z_dim)
-        self.relu = nn.ReLU(inplace=True)
+        self.encoder = nn.Sequential(
+            nn.Linear(self.x_dim, self.h_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(self.h_dim, self.h_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(self.h_dim, self.z_dim)
+        )
 
     def forward(self, x):
-        for h in self.hidden_layers:
-            x = self.relu(h(x))
-        return self.output(x)
+        return self.encoder(x)
 
 
 class Decoder(nn.Module):
@@ -28,18 +28,18 @@ class Decoder(nn.Module):
         self.x_dim = x_dim
         self.h_dim = h_dim
         self.z_dim = z_dim
-
-        self.neurons = [self.x_dim, *self.h_dim]
-        self.hidden_layers = nn.ModuleList([nn.Linear(self.neurons[i - 1], self.neurons[i])
-                                            for i in range(1, len(self.neurons))])
-        self.output = nn.Linear(self.h_dim[-1], self.z_dim)
-        self.relu = nn.ReLU(inplace=True)
-        self.sigmoid = nn.Sigmoid()
+        
+        self.decoder = nn.Sequential(
+            nn.Linear(self.z_dim, self.h_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(self.h_dim, self.h_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(self.h_dim, self.x_dim),
+            nn.Sigmoid()
+        )
 
     def forward(self, x):
-        for h in self.hidden_layers:
-            x = self.relu(h(x))
-        return self.sigmoid(self.output(x))
+        return self.decoder(x)
 
 
 class SparseAutoEncoder(nn.Module):
@@ -52,14 +52,14 @@ class SparseAutoEncoder(nn.Module):
         self.is_disc = is_disc
 
         self.encoder = Encoder(self.x_dim, self.h_dim, self.z_dim)
-        self.decoder = Decoder(self.z_dim, self.h_dim, self.x_dim)
+        self.decoder = Decoder(self.x_dim, self.h_dim, self.z_dim)
 
     def forward(self, x, temperature=1.):
-        enc = self.encoder(x)
+        enc = self.encoder(x)  # logits
 
         if self.is_disc:
             enc = gumbel_sigmoid(enc, temperature)
 
-        rec = self.decoder(enc)
+        rec = self.decoder(enc)  # sigmoid
 
         return enc, rec
