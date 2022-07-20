@@ -3,7 +3,7 @@ from tqdm import tqdm
 import torch
 from torchvision.utils import save_image
 
-from models.loss import sparse_loss
+from models.loss import sparse_loss, sparse_loss_kl
 from utils.utility import save_decoded_image
 from utils.plotter import plot_loss
 
@@ -12,7 +12,7 @@ import numpy as np
 
 class Trainer:
     def __init__(self, model, criterion, learning_rate, device, add_sparsity, reg_param, num_enc_layer, num_dec_layer,
-                 is_disc):
+                 is_disc, is_kl, rho):
 
         self.model = model
         self.criterion = criterion
@@ -23,9 +23,12 @@ class Trainer:
         self.num_enc_layer = num_enc_layer
         self.num_dec_layer = num_dec_layer
         self.is_disc = is_disc
+        self.is_kl = is_kl
+        self.rho = rho
         self.temperature = 1.
         self.ANNEAL_RATE = 0.9995
         self.temp_min = 0.5
+        
 
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
@@ -52,10 +55,14 @@ class Trainer:
             mse_loss = self.criterion(outputs, img)
 
             if self.add_sparsity == 'yes':
-                l1_loss = sparse_loss(self.model, img, self.num_enc_layer, self.num_dec_layer, self.is_disc, 
+                if self.is_kl:
+                    spars = sparse_loss_kl(self.model, img, self.rho, self.num_enc_layer, self.num_dec_layer,
+                                         self.device, self.is_disc, self.temperature)
+                else:
+                    spars = sparse_loss(self.model, img, self.num_enc_layer, self.num_dec_layer, self.is_disc, 
                                       self.temperature)
                 # add the sparsity penalty
-                loss = mse_loss + self.reg_param * l1_loss
+                loss = mse_loss + self.reg_param * spars
             else:
                 loss = mse_loss
 

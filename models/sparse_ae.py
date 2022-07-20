@@ -53,12 +53,15 @@ class SparseAutoEncoder(nn.Module):
 
         self.encoder = Encoder(self.x_dim, self.h_dim, self.z_dim)
         self.decoder = Decoder(self.x_dim, self.h_dim, self.z_dim)
+        self.l_relu = nn.LeakyReLU()
 
     def forward(self, x, temperature=1.):
         enc = self.encoder(x)  # logits
 
         if self.is_disc:
             enc = gumbel_sigmoid(enc, temperature)
+        else:
+            enc = self.l_relu(enc)
 
         rec = self.decoder(enc)  # sigmoid
 
