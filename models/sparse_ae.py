@@ -54,6 +54,9 @@ class SparseAutoEncoder(nn.Module):
         self.encoder = Encoder(self.x_dim, self.h_dim, self.z_dim)
         self.decoder = Decoder(self.x_dim, self.h_dim, self.z_dim)
         self.l_relu = nn.LeakyReLU()
+        
+    def generate(self, z):
+        return self.decoder(z)
 
     def forward(self, x, temperature=1.):
         enc = self.encoder(x)  # logits

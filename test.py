@@ -75,44 +75,29 @@ if __name__ == '__main__':
 
     trainer = Trainer(model, criterion, learning_rate, device, add_sparsity, reg_param, num_enc_layer, num_dec_layer,
                       is_disc, is_kl, rho)
-    trainer.train(train_loader, test_loader, epochs, path_model)
-
     # Load model
     model.load_state_dict(torch.load(path_model))
+    
+    enc_lab = pd.read_csv('embedding_labels_discrete_nokl.csv')
+    
+    group_lab = enc_lab.groupby('y')
+    
+    enc = []
+    
+    print('Grouping ...')
+    for name, group in group_lab:
+        enc.append(group.values[:, :-1])
 
-    encoding = None
-    labels = None
+    labels = 4
+    idxz = 10
+    
+    z_in = torch.tensor(enc[labels][idxz], dtype=torch.float32)
 
     model.eval()
     with torch.no_grad():
-        for i, data in tqdm(enumerate(test_loader), total=int(len(test_loader) / test_loader.batch_size)):
-            img, y = data
-            img = img.to(device)
-            img = img.view(img.size(0), -1)
-            enc, _ = model(img)
+        z_in.to(device)
+        
+        rec = model.generate(z_in)
 
-            if i == 0:
-                encoding = enc
-                labels = y
-            else:
-                encoding = torch.cat((encoding, enc))
-                labels = torch.cat((labels, y))
-
-    encoding = encoding.detach().cpu().numpy()
-    labels = labels.detach().cpu().numpy()
-
-    df = pd.DataFrame(encoding)
-    df['y'] = labels
-
-    print('*'*20)
-    print(df)
-    print('*' * 20)
-    df.to_csv('embedding_labels_discrete_nokl.csv', index=False)
-
-    col = ['coral', 'limegreen', 'royalblue', 'slateblue', 'orchid', 'palevioletred', 'chocolate', 'olive', 'palegreen',
-           'teal']
-    lab = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    targets = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-    path = 'outputs/images/tsne.png'
-
-    visualize_tsne(encoding, labels, col, lab, targets, path)
+    plt.imshow(rec.resize(28, 28, 1), cmap='gray')
+    plt.show()

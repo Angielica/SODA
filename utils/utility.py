@@ -25,7 +25,7 @@ def save_decoded_image(img, name):
     save_image(img, name)
 
 
-def gumbel_sigmoid_sample(logits, temperature):
+def gumbel_sigmoid_sample(logits, temperature=1.):
     u = torch.rand_like(logits)
     y = logits + torch.log(u) - torch.log(1 - u)
 
