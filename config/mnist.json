@@ -1,0 +1,13 @@
+{
+    "epochs" : 50,
+    "reg_param" : 0.001,
+    "rho" : 0.3,
+    "add_sparsity" : "yes",
+    "num_enc_layer" : 3,
+    "num_dec_layer" : 3,
+    "learning_rate" : 0.001,
+    "batch_size" : 100,
+    "is_kl" : 0,
+    "is_disc" : 1
+
+}
