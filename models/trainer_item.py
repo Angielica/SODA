@@ -27,7 +27,7 @@ class Trainer:
         self.rho = params['rho']
         self.dataset_name = params['dataset']
         self.temperature = 1.
-        self.ANNEAL_RATE = 0.9995
+        self.ANNEAL_RATE = 0.995
         self.temp_min = 0.5
 
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
@@ -42,25 +42,24 @@ class Trainer:
         self.model.train()
         running_loss = 0.0
         counter = 0
+        loss = 0
 
-        for _, data in tqdm(enumerate(dataloader), total=int(len(dataloader) / dataloader.batch_size)):
+        for _, x in tqdm(enumerate(dataloader), total=int(len(dataloader) / dataloader.batch_size)):
             counter += 1
-
-            img, _ = data
-            img = img.to(self.device)
-            img = img.view(img.size(0), -1)
+            
+            x = x.to(self.device)
 
             self.optimizer.zero_grad()
-            _, outputs = self.model(img, self.temperature)
-            mse_loss = self.criterion(outputs, img)
+            _, outputs, _ = self.model(x, self.temperature)
+            mse_loss = self.criterion(outputs, x)
 
             if self.add_sparsity == 'yes':
                 if self.is_kl:
-                    spars = sparse_loss_kl(self.model, img, self.rho, self.num_enc_layer, self.num_dec_layer,
-                                         self.device, self.is_disc, self.temperature)
+                    spars = sparse_loss_kl(self.model, x, self.rho, self.num_enc_layer, self.num_dec_layer,
+                                           self.device, self.is_disc, self.temperature)
                 else:
-                    spars = sparse_loss(self.model, img, self.num_enc_layer, self.num_dec_layer, self.is_disc, 
-                                      self.temperature)
+                    spars = sparse_loss(self.model, x, self.num_enc_layer, self.num_dec_layer, self.is_disc, 
+                                        self.temperature)
                 # add the sparsity penalty
                 loss = mse_loss + self.reg_param * spars
             else:
@@ -75,11 +74,10 @@ class Trainer:
             running_loss += loss.item()
 
         epoch_loss = running_loss / counter
-        print(f"Train Loss: {loss:.3f}")
-        print(f'Temperature: {self.temperature:.3f}')
-        # save the reconstructed images every 5 epochs
-        if epoch % 10 == 0 and self.dataset_name == 'MNIST':
-            save_decoded_image(outputs.cpu(), f"outputs/images/train{epoch}.png")
+        print()
+        print(f"Train Loss: {epoch_loss:.3f}")
+        print()
+
         return epoch_loss
 
     # define the validation function
@@ -90,30 +88,22 @@ class Trainer:
         counter = 0
 
         with torch.no_grad():
-            for _, data in tqdm(enumerate(dataloader), total=int(len(dataloader) / dataloader.batch_size)):
+            for _, x in tqdm(enumerate(dataloader), total=int(len(dataloader) / dataloader.batch_size)):
                 counter += 1
-                img, _ = data
-                img = img.to(self.device)
-                img = img.view(img.size(0), -1)
-                _, outputs = self.model(img, self.temperature)
-                loss = self.criterion(outputs, img)
+                
+                x = x.to(self.device)
+                
+                _, outputs, _ = self.model(x, self.temperature)
+                loss = self.criterion(outputs, x)
                 running_loss += loss.item()
 
                 if counter % 100 == 1:
                     self.anneal_temp(lowerbound=5e-15)
 
         epoch_loss = running_loss / counter
-        print(f"Val Loss: {loss:.3f}")
-        print(f'Temperature: {self.temperature:.3f}')
-        # save the reconstructed images every 5 epochs
-        if epoch % 10 == 0 and self.dataset_name == 'MNIST':
-            outputs = outputs.view(outputs.size(0), 1, 28, 28).cpu().data
-            save_image(outputs, f"outputs/images/reconstruction{epoch}.png")
-
-            n = min(img.size(0), 8)
-            comparison = torch.cat([img.view(img.shape[0], 1, 28, 28)[:n],
-                                    outputs.view(outputs.shape[0], 1, 28, 28)[:n]])
-            save_image(comparison, f"outputs/images/comparison{epoch}.png")
+        print()
+        print(f"Val Loss: {epoch_loss:.3f}")
+        print()
 
         return epoch_loss
 
