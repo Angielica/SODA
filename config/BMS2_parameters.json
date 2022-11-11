@@ -1,0 +1,17 @@
+{
+  "filename": "./data/BMS-WebView-2/BMS2_transaction.csv",
+  "bs": 128,
+  "dataset": "BMS-WebView-2",
+  "h_dim": 500,
+  "is_disc": 1,
+  "rec_disc": 1,
+  "epochs": 100,
+  "reg_param" : 0.001,
+  "rho" : 0.3,
+  "add_sparsity" : "yes",
+  "num_enc_layer" : 3,
+  "num_dec_layer" : 3,
+  "learning_rate" : 0.001,
+  "is_kl": 0,
+  "ifm": "/Users/angelicaliguori/PycharmProjects/SODA/data/BMS-WebView-2/BMS2.ifm"
+}
