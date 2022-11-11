@@ -63,8 +63,8 @@ class SparseAutoEncoder(nn.Module):
     def forward(self, x, temperature=1.):
         enc = self.encoder(x)  # logits
 
-        z_hard = self.sigmoid(enc)
-        z_hard = (z_hard > .5).float()
+        # z_hard = self.sigmoid(enc)
+        # z_hard = (z_hard > .5).float()
 
         if self.is_disc:
             enc = gumbel_sigmoid(enc, temperature)
@@ -78,4 +78,4 @@ class SparseAutoEncoder(nn.Module):
         else:
             rec = self.sigmoid(rec)
 
-        return enc, rec, z_hard
+        return enc, rec
